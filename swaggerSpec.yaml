@@ -1,0 +1,173 @@
+swagger: "2.0"
+info:
+  contact: 
+    name: RPP Recon Prod Support Team
+  description: rpp-events
+  title: rpp-events Recon Platform Events API
+  version: '1.1'
+tags:
+  - name: rpp-events
+    description: Recon Platform Events API
+schemes:
+  - http
+  - https
+paths:
+  /eventerCallback:
+    post:
+      responses:
+        202:
+          description: "Accepted"
+          schema:
+            $ref: "#/definitions/NotDefinedSchema"
+      x-amazon-apigateway-integration:
+        type: "aws"
+        httpMethod: "POST"
+        uri:
+          Fn::If:
+            - alias
+            - Fn::Sub: arn:aws:apigateway:${AWS::Region}:sqs:path/${AWS::AccountId}/${AliasName}-rpp-events-eventer-queue
+            - Fn::Sub: arn:aws:apigateway:${AWS::Region}:sqs:path/${AWS::AccountId}/rpp-events-eventer-queue
+        credentials:
+          Fn::If:
+            - alias
+            - Fn::Sub: arn:aws:iam::${AWS::AccountId}:role/acct-managed/${AliasName}-rpp-events-api-role
+            - Fn::Sub: arn:aws:iam::${AWS::AccountId}:role/acct-managed/rpp-events-api-role
+        requestParameters:
+          integration.request.header.Content-Type: "'application/x-www-form-urlencoded'"
+        requestTemplates:
+          application/json: "Action=SendMessage&MessageBody=$input.json('$').replaceAll('%','%25').replaceAll('&','%26')"
+        passthroughBehavior: "NEVER"
+        responses:
+          default:
+            statusCode: "202"
+
+  /peEvent:
+    options:
+      summary: CORS support
+      description: Enable CORS by returning correct headers
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      tags:
+      - CORS
+      x-amazon-apigateway-integration:
+        type: mock
+        requestTemplates:
+          application/json: |
+            {
+              "statusCode" : 200
+            }
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Headers : "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'"
+              method.response.header.Access-Control-Allow-Methods : "'*'"
+              method.response.header.Access-Control-Allow-Origin : "'*'"
+            responseTemplates:
+              application/json: |
+                {}
+      responses:
+        '200':
+          description: Default response for CORS method
+          headers:
+            Access-Control-Allow-Headers:
+              type: "string"
+            Access-Control-Allow-Methods:
+              type: "string"
+            Access-Control-Allow-Origin:
+              type: "string"
+    post:
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      responses:
+        202:
+          description: "Accepted"
+          headers:
+            Access-Control-Allow-Origin:
+              type: "string"
+          schema:
+            $ref: "#/definitions/NotDefinedSchema"
+      parameters:
+        - in: body
+          name: eventType
+          required: true
+          schema:
+            $ref: "#/definitions/PEEvent"
+      security:
+        - api-gateway-authorizer: []
+      x-amazon-apigateway-request-validator: "body-only"
+      x-amazon-apigateway-integration:
+        type: "aws"
+        httpMethod: "POST"
+        uri:
+          Fn::If:
+            - alias
+            - Fn::Sub: arn:aws:apigateway:${AWS::Region}:sqs:path/${AWS::AccountId}/${AliasName}-rpp-events-pe-queue
+            - Fn::Sub: arn:aws:apigateway:${AWS::Region}:sqs:path/${AWS::AccountId}/rpp-events-pe-queue
+        credentials:
+          Fn::If:
+            - alias
+            - Fn::Sub: arn:aws:iam::${AWS::AccountId}:role/acct-managed/${AliasName}-rpp-events-api-role
+            - Fn::Sub: arn:aws:iam::${AWS::AccountId}:role/acct-managed/rpp-events-api-role
+        requestParameters:
+          integration.request.header.Content-Type: "'application/x-www-form-urlencoded'"
+        requestTemplates:
+          application/json: "Action=SendMessage&MessageBody=$input.json('$').replaceAll('&','%26')"
+        passthroughBehavior: "NEVER"
+        responses:
+          default:
+            statusCode: "202"
+            headers:
+              Access-Control-Allow-Origin:
+                type: "string"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin : "'*'"
+            responseTemplates:
+              application/json: '{"success": true}'
+
+securityDefinitions:
+  api-gateway-authorizer:
+    type: "apiKey"
+    name: "Authorization"
+    in: "header"
+    x-amazon-apigateway-authtype: "custom"
+    x-amazon-apigateway-authorizer:
+      authorizerUri:
+        Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:rpp-lambda-authorizer/invocations
+      authorizerCredentials:
+        Fn::If:
+          - alias
+          - Fn::Sub: arn:aws:iam::${AWS::AccountId}:role/acct-managed/${AliasName}-rpp-events-api-role
+          - Fn::Sub: arn:aws:iam::${AWS::AccountId}:role/acct-managed/rpp-events-api-role
+      identityValidationExpression: "^Bearer [-0-9a-zA-z\\.]*$"
+      type: "token"
+
+x-amazon-apigateway-gateway-responses:
+  BAD_REQUEST_BODY:
+    statusCode: 400
+    responseParameters:
+      gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+    responseTemplates:
+      application/json: '{"success": false, "errorMessage":$context.error.messageString }'
+
+x-amazon-apigateway-request-validators:
+  body-only:
+      validateRequestBody: true
+      validateRequestParameters: false
+
+definitions:
+  NotDefinedSchema:
+    type: object
+    title: Not defined schema
+
+  PEEvent:
+    type: object
+    required:
+    - eventType
+    properties:
+      eventType:
+        type: string

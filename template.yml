@@ -1,0 +1,1073 @@
+# Developer Note:
+# As of Feb 2024, rpp-events does not have the concept of aliasing because we are hard
+# limited to a maximum of 5 consumers for Mashery. Because of this, you will need to
+# test deployments directly to the non-aliased `rpp-events` CF stack in the dev account
+# Delete this note whenever necessary.
+
+AWSTemplateFormatVersion: "2010-09-09"
+Transform:
+  - AWS::Serverless-2016-10-31
+  - rpp-alksify
+  - rpp-auto-tagger
+
+Description: Functions and resources that define rpp-events
+
+Parameters:
+  AliasName:
+    Description: Alias to use when creating API and lambda
+    Type: String
+    Default: latest
+
+  AliasLogRetentionInDays:
+    Description: Log retention in days for the lambda functions for alias
+    Type: String
+    Default: "1"
+
+  DomainName:
+    Description: Domain for which the api will be added.
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /general/domain
+
+  InsightsAlertTopic:
+    Description: Insights Alert SNS Topic Arn
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: "/rpp-monitoring/alerts/topic/insights"
+
+  LambdaInsightsVersion:
+    Description: Version of LambdaInsights
+    Type: String
+    Default: "14"
+
+  LambdaPythonProfilerVersion:
+    Description: Version of Python Profiler
+    Type: String
+    Default: "11"
+
+  PrivateDNSZoneID:
+    Description: Private ID of the host zone
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /general/zoneid/reconmvs/private
+
+  PublicDNSZoneID:
+    Description: Public ID of the host zone
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /general/zoneid/reconmvs/public
+
+  AppConfigVersion:
+    Description: Version of AppConfig
+    Type: String
+    Default: "68"
+
+  RppEventsMetricName:
+    Description: rpp events metrics name
+    Type: String
+    Default: rpp_events_metrics_name
+
+  FindConsignment:
+    Description: Name of the find consignment lambda function
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /rpp-consignment/latest/function/find_consignment
+
+  RppEventsMetricCount:
+    Description: rpp events metrics count
+    Type: String
+    Default: rpp_events_metrics_count
+
+Mappings:
+  Account:
+    "723760181230":
+      env: development
+      logLevel: DEBUG
+      apiLogLevel: INFO
+      logRetentionInDays: 30
+      pointInTimeRecoveryEnabled: false
+      retentionPeriod: 24
+      logLambdaEvent: true
+    "284730544526":
+      env: integration
+      logLevel: INFO
+      apiLogLevel: INFO
+      logRetentionInDays: 30
+      pointInTimeRecoveryEnabled: false
+      retentionPeriod: 24
+      logLambdaEvent: true
+    "444779210632":
+      env: uat
+      logLevel: INFO
+      apiLogLevel: INFO
+      logRetentionInDays: 60
+      pointInTimeRecoveryEnabled: false
+      retentionPeriod: 24
+      logLambdaEvent: true
+    "956505305906":
+      env: release
+      logLevel: ERROR
+      apiLogLevel: ERROR
+      logRetentionInDays: 60
+      pointInTimeRecoveryEnabled: true
+      retentionPeriod: 168
+      logLambdaEvent: false
+    "920998146600":
+      env: "production"
+      logLevel: ERROR
+      apiLogLevel: ERROR
+      logRetentionInDays: 365
+      pointInTimeRecoveryEnabled: true
+      retentionPeriod: 168
+      logLambdaEvent: false
+
+Conditions:
+  alias: !Not [!Equals [!Ref AliasName, "latest"]]
+  IsDevelopment:
+    !Equals [!FindInMap [Account, !Ref "AWS::AccountId", env], "development"]
+  IsRelease:
+    !Equals [!FindInMap [Account, !Ref "AWS::AccountId", env], "release"]
+  DeployCIPResources:
+    !And [!Not [!Condition IsDevelopment], !Not [!Condition IsRelease]]
+
+Metadata:
+  GlobalTags:
+    - { "Key": "workloadName", "Value": "Recon Inventory" }
+    - { "Key": "workloadCiId", "Value": "CI2361224" }
+    - { "Key": "componentName", "Value": "rpp-events" }
+    - { "Key": "componentCiId", "Value": "CI2361225" }
+    - { "Key": "coxauto:ci-id", "Value": "CI2361225" }
+    - { "Key": "repo", "Value": "https://ghe.coxautoinc.com/ReconMVS/rpp-events" }
+    - { "Key": "Layer", "Value": "Ingress" }
+    - { "Key": "createdBy", "Value": "CloudFormation" }
+    - { "Key": "ownerEmail", "Value": "ShopOps-Seal@coxautoinc.com" }
+    - { "Key": "department", "Value": "I5 - Vehicle Services - Shop Operations" }
+    - { "Key": "team", "Value": "Seal" }
+
+Globals:
+  Function:
+    Runtime: python3.13
+    Tracing: Active
+    AutoPublishAlias: !Ref AliasName
+    Environment:
+      Variables:
+        LOG_LEVEL: !FindInMap [Account, !Ref "AWS::AccountId", logLevel]
+        CHARGES_DLQ_URL: !Ref RPPEventsChargesDLQ
+        POWERTOOLS_SERVICE_NAME:
+          !If [alias, !Sub "${AliasName}-rpp-events", !Sub "rpp-events"]
+        POWERTOOLS_LOGGER_LOG_EVENT:
+          !FindInMap [Account, !Ref "AWS::AccountId", logLambdaEvent]
+        POWERTOOLS_METRICS_NAMESPACE:
+          !If [
+            alias,
+            !Sub "${AliasName}-rpp-recon-inventory",
+            !Sub "rpp-recon-inventory",
+          ]
+        APPCONFIG_ENV: !FindInMap [Account, !Ref "AWS::AccountId", env]
+        APPCONFIG_APP:
+          !If [
+            alias,
+            !Sub "${AliasName}-rpp-recon-inventory-config",
+            !Sub "rpp-recon-inventory-config",
+          ]
+        APPCONFIG_CONFIG:
+          !If [
+            alias,
+            !Sub "${AliasName}-configuration-profile",
+            !Sub "configuration-profile",
+          ]
+        METRIC_NAME: !Ref RppEventsMetricName
+        METRIC_COUNT: !Ref RppEventsMetricCount
+        RPP_EVENTS_TABLE_NAME: !Ref RPPEventsTable
+        INVENTORY_TABLE: "rpp-events-eventer"
+    Tags:
+      X-RAY-GROUP: rpp-events
+    Layers:
+      - !Sub "arn:aws:lambda:${AWS::Region}:580247275435:layer:LambdaInsightsExtension:${LambdaInsightsVersion}"
+      - !Sub "arn:aws:lambda:${AWS::Region}:157417159150:layer:AWSCodeGuruProfilerPythonAgentLambdaLayer:${LambdaPythonProfilerVersion}"
+
+Resources:
+  RPPEventsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !If [alias, !Sub "${AliasName}-rpp-events-role", !Sub "rpp-events-role"]
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: !If [alias, !Sub "${AliasName}-rpp-events-policy", !Sub "rpp-events-policy"]
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sns:GetSubscriptionAttributes
+                  - sns:SetSubscriptionAttributes
+                  - sns:Unsubscribe
+                Resource:
+                  - !Sub "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:*"
+              - Effect: Allow
+                Action:
+                  - sns:ListSubscriptionsByTopic
+                  - sns:Publish
+                  - sns:Subscribe
+                Resource:
+                  - !Sub "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${RPPEventsBus.TopicName}"
+              - Effect: Allow
+                Action:
+                  - sqs:ChangeMessageVisibility
+                  - sqs:DeleteMessage
+                  - sqs:GetQueueAttributes
+                  - sqs:GetQueueUrl
+                  - sqs:ListQueues
+                  - sqs:ReceiveMessage
+                  - sqs:SendMessage
+                Resource:
+                  - !GetAtt RPPEventsEventerQueue.Arn
+                  - !GetAtt RPPEventsInspectionRepairQueue.Arn
+                  - !GetAtt RPPEventsPEQueue.Arn
+                  - !GetAtt RPPEventsChargesQueue.Arn
+                  - !GetAtt RPPEventsChargesDLQ.Arn
+                  - !GetAtt RPPEventsRPPQueue.Arn
+                  - !GetAtt EventProducerDLQ.Arn
+              - Effect: Allow
+                Action:
+                  - ssm:GetParametersByPath
+                  - ssm:GetParameters
+                  - ssm:GetParameter
+                Resource:
+                  - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/*"
+              - Effect: Allow
+                Action:
+                  - xray:PutTraceSegments
+                  - xray:PutTelemetryRecords
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:DescribeLogGroups
+                  - logs:DescribeLogStreams
+                  - logs:PutLogEvents
+                  - logs:GetLogEvents
+                  - logs:FilterLogEvents
+                Resource:
+                  - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*rpp-events*"
+                  - !Sub "arn:aws:logs:*:*:log-group:/aws/lambda-insights:*"
+              - Effect: Allow
+                Action:
+                  - appconfig:GetConfiguration
+                  - appconfig:StartConfigurationSession
+                  - appconfig:GetLatestConfiguration
+                Resource:
+                  - !Sub "arn:aws:appconfig:${AWS::Region}:${AWS::AccountId}:*"
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                Resource:
+                  - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:*"
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:Query
+                Resource:
+                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:*"
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                Resource:
+                  - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${FindConsignment}"
+              - Effect: Allow
+                Action:
+                  - events:PutEvents
+                Resource:
+                  - !Sub "arn:aws:events:${AWS::Region}:${AWS::AccountId}:event-bus/*rpp*"
+                  - !Sub "arn:aws:events:${AWS::Region}:${AWS::AccountId}:endpoint/*rpp*"
+              - Effect: Allow
+                Action:
+                  - dynamodb:DescribeTable
+                  - dynamodb:UpdateTable
+                  - dynamodb:BatchGetItem
+                  - dynamodb:BatchWriteItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:Query
+                  - dynamodb:UpdateItem
+                  - dynamodb:GetRecords
+                Resource:
+                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/*rpp-events*"
+                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/*rpp-events*/index/*"
+
+  ProfilingGroup:
+    Type: AWS::CodeGuruProfiler::ProfilingGroup
+    DependsOn: RPPEventsRole
+    Properties:
+      ProfilingGroupName:
+        !If [alias, !Sub "${AliasName}-rpp-events", !Sub "rpp-events"]
+      ComputePlatform: AWSLambda
+      AgentPermissions:
+        Principals:
+          - !GetAtt RPPEventsRole.Arn
+      AnomalyDetectionNotificationConfiguration:
+        - channelUri: !Ref InsightsAlertTopic
+
+  RPPEventsAPIRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !If [alias, !Sub "${AliasName}-rpp-events-api-role", !Sub "rpp-events-api-role"]
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - apigateway.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - !Sub "arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy"
+        - !Sub "arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess"
+      Policies:
+        - PolicyName: !If [alias, !Sub "${AliasName}-rpp-events-api-policy", !Sub "rpp-events-api-policy"]
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sqs:SendMessage
+                Resource:
+                  - !GetAtt RPPEventsEventerQueue.Arn
+                  - !GetAtt RPPEventsPEQueue.Arn
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                Resource:
+                  - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:rpp-lambda-authorizer"
+
+  RPPEventsLoggingPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !If [alias, !Sub "${AliasName}-rpp-events-logging-policy", !Sub "rpp-events-logging-policy"]
+      Roles:
+        - !Ref RPPEventsRole
+        - !Ref RPPEventsAPIRole
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - logs:CreateLogGroup
+            Resource:
+              - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*"
+          - Effect: Allow
+            Action:
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+            Resource:
+              - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*"
+
+
+  ApiGatewayLogGroup:
+    Type: 'AWS::Logs::LogGroup'
+    Properties:
+      LogGroupName: !If [alias, !Sub '/aws/apigateway/${AliasName}-rpp-events/access-logs', !Sub '/aws/apigateway/rpp-events/access-logs']
+      RetentionInDays: !If [
+                          alias,
+                          !Ref AliasLogRetentionInDays,
+                          !FindInMap [ Account, !Ref "AWS::AccountId", logRetentionInDays ]
+                        ]
+
+  RPPEventsAPI:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !Ref AliasName
+      TracingEnabled: true
+      OpenApiVersion: "3.0.0"
+      MethodSettings:
+        - LoggingLevel: !FindInMap [ Account, !Ref "AWS::AccountId", apiLogLevel ]
+          ResourcePath: '/*'
+          HttpMethod: '*'
+          DataTraceEnabled: true
+          MetricsEnabled: true
+      AccessLogSetting:
+        DestinationArn: !GetAtt ApiGatewayLogGroup.Arn
+        Format:
+          '{"requestId":"$context.requestId","ip":"$context.identity.sourceIp","caller":"$context.identity.caller","user":"$context.identity.user","requestTime":"$context.requestTime","httpMethod":"$context.httpMethod","resourcePath":"$context.resourcePath","status":"$context.status","protocol":"$context.protocol","responseLength":"$context.responseLength","method":"$context.httpMethod","path":"$context.resourcePath","requestTimeEpoch":"$context.requestTimeEpoch","resourceId":"$context.resourceId","resourcePath":"$context.resourcePath","stage":"$context.stage","status":"$context.status","latency":"$context.requestLatency","integrationStatus":"$context.integrationStatus","integrationLatency":"$context.integrationLatency","responseLength":"$context.responseLength","errorMessage":"$context.error.message","errorResponseType":"$context.error.responseType","xrayTraceId":"$context.xrayTraceId","accountId":"$context.identity.accountId","apiId":"$context.apiId","authorizer.principalId":"$context.authorizer.principalId","authorizer.claims":"$context.authorizer.claims","authorizer.integration.requestId":"$context.integration.requestId"}'
+      DefinitionBody:
+        Fn::Transform:
+          Name: AWS::Include
+          Parameters:
+            Location: swaggerSpec.yaml
+#      MethodSettings:
+#        - HttpMethod: "*"
+#          ResourcePath: "/*"
+#          LoggingLevel: ERROR
+
+
+  WebACLAssociation:
+    DependsOn: 
+      - RPPEventsAPI
+      - RPPEventsAPIStage
+    Type: AWS::WAFv2::WebACLAssociation
+    Properties:
+      ResourceArn: !Sub 'arn:aws:apigateway:${AWS::Region}::/restapis/${RPPEventsAPI}/stages/${AliasName}'
+      WebACLArn: '{{resolve:ssm:/rpp-governance/webacl/default/api/Arn}}'
+
+  RPPEventsCustomDomain:
+    Type: AWS::ApiGateway::DomainName
+    DependsOn:
+      - RPPEventsAPI
+    Properties:
+      DomainName: !If [alias, !Sub "${AliasName}-rpp-events.${DomainName}", !Sub "rpp-events.${DomainName}"]
+      EndpointConfiguration:
+        Types:
+          - "REGIONAL"
+      RegionalCertificateArn: "{{resolve:ssm:/general/ssl/cert/Arn}}"
+
+  RPPPECustomDomainMapping:
+    Type: AWS::ApiGateway::BasePathMapping
+    DependsOn:
+      - RPPEventsAPIStage
+    Properties:
+      DomainName: !Ref RPPEventsCustomDomain
+      RestApiId: !Ref RPPEventsAPI
+      Stage: !Ref AliasName
+
+  RPPEventsCustomDomainDNS:
+    Type: AWS::Route53::RecordSetGroup
+    Properties:
+      HostedZoneId: !Ref PublicDNSZoneID
+      RecordSets:
+        - Type: A
+          Name: !Ref RPPEventsCustomDomain
+          AliasTarget:
+            HostedZoneId: !GetAtt RPPEventsCustomDomain.RegionalHostedZoneId
+            DNSName: !GetAtt RPPEventsCustomDomain.RegionalDomainName
+
+  RPPEventsCustomDomainDNSPrivate:
+    Type: AWS::Route53::RecordSetGroup
+    Properties:
+      HostedZoneId: !Ref PrivateDNSZoneID
+      RecordSets:
+        - Type: A
+          Name: !Ref RPPEventsCustomDomain
+          AliasTarget:
+            HostedZoneId: !GetAtt RPPEventsCustomDomain.RegionalHostedZoneId
+            DNSName: !GetAtt RPPEventsCustomDomain.RegionalDomainName
+
+  RPPEventsBus:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: !If [alias, !Sub "${AliasName}-rpp-events-bus", !Sub "rpp-events-bus"]
+
+  RPPEventsBusDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !If [alias, !Sub "${AliasName}-rpp-events-bus-dl-queue", !Sub "rpp-events-bus-dl-queue"]
+
+  RPPEventsBusAndDLQSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Protocol: "sqs"
+      Endpoint: !GetAtt RPPEventsBusDLQ.Arn
+      TopicArn: !Ref RPPEventsBus
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt RPPEventsBusDLQ.Arn
+
+  RPPEventsBusTopicParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: "String"
+      Name: !If [alias, !Sub "/rpp-events/${AliasName}/topic/name", !Sub "/rpp-events/topic/name"] 
+      Value: !GetAtt RPPEventsBus.TopicName
+      Description: "SSM Parameter for rpp-events sns topic name"
+
+  RPPEventsSubscriberCFN:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./build
+      Handler: rpp_events_subscriber.handler
+      FunctionName: !If [
+          alias,
+          !Sub "${AliasName}-rpp-events-subscriber-cfn",
+          "rpp-events-subscriber-cfn",
+        ]
+      Timeout: 300
+      Role: !GetAtt RPPEventsRole.Arn
+      Environment:
+        Variables:
+          EVENTER_URL: "/subscribers"
+          LOG_LEVEL: !FindInMap [Account, !Ref "AWS::AccountId", logLevel]
+    
+  RPPEventsCIPSubscriberCFN:
+    Type: AWS::Serverless::Function
+    Condition: DeployCIPResources
+    Properties:
+      CodeUri: ./build
+      Handler: rpp_events_cip_subscriber.handler
+      FunctionName: !If [
+          alias,
+          !Sub "${AliasName}-rpp-events-cip-subscriber-cfn",
+          "rpp-events-cip-subscriber-cfn",
+        ]
+      Timeout: 300
+      Role: !GetAtt RPPEventsRole.Arn
+      Environment:
+        Variables:
+          EVENTER_URL: "/wholesale-account/events/kiosk/subscribers"
+          LOG_LEVEL: !FindInMap [Account, !Ref "AWS::AccountId", logLevel]
+
+  RPPEventsSubscriber:
+    Type: Custom::RPPEventsSubscriber
+    DependsOn:
+      - RPPEventsSubscriberCFN
+    Properties:
+      ServiceToken: !If [
+          alias,
+          !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${AliasName}-rpp-events-subscriber-cfn",
+          !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:rpp-events-subscriber-cfn"
+        ]
+      Source:
+        Eventer:
+          CallbackUrl: !Sub "https://${RPPEventsAPI}.execute-api.${AWS::Region}.amazonaws.com/${AliasName}/eventerCallback"
+          Emails:
+            - "xti.recon-dev@coxautoinc.com"
+
+  RPPEventsCIPSubscriber:
+    Type: Custom::RPPEventsCIPSubscriber
+    Condition: DeployCIPResources
+    DependsOn:
+      - RPPEventsCIPSubscriberCFN
+    Properties:
+      ServiceToken: !If [
+          alias,
+          !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${AliasName}-rpp-events-cip-subscriber-cfn",
+          !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:rpp-events-cip-subscriber-cfn"
+        ]
+      Source:
+        Eventer:
+          CallbackUrl: !Sub "https://${RPPEventsAPI}.execute-api.${AWS::Region}.amazonaws.com/${AliasName}/eventerCallback" #to change
+          Emails:
+            - "xti.recon-dev@coxautoinc.com"
+          # Play around with inactive
+
+  RPPEventsCFN:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./build
+      Handler: rpp_events_subscription.handler
+      FunctionName: !If [
+          alias,
+          !Sub "${AliasName}-rpp-events-cfn",
+          "rpp-events-cfn",
+        ]
+      Timeout: 300
+      Role: !GetAtt RPPEventsRole.Arn
+      Environment:
+        Variables:
+          TABLE_NAME: "rpp-events-eventer"
+          EVENT_BUS_ARN: !Ref RPPEventsBus
+          EVENT_FIREHOSE: "NOT-IMPLEMENTED"
+          EVENTER_SUBSCRIBER_URL: !GetAtt RPPEventsSubscriber.SubscriberUrl
+          EVENTER_SUBSCRIBER_ID: !GetAtt RPPEventsSubscriber.SubscriberId
+          EVENTER_SUBSCRIPTION_URL: "/subscriptions"
+          LOG_LEVEL: !FindInMap [Account, !Ref "AWS::AccountId", logLevel]
+
+  RPPEventsCIPCFN:
+    Type: AWS::Serverless::Function
+    Condition: DeployCIPResources
+    Properties:
+      CodeUri: ./build
+      Handler: rpp_events_cip_subscription.handler
+      FunctionName: !If [
+          alias,
+          !Sub "${AliasName}-rpp-events-cip-cfn",
+          "rpp-events-cip-cfn",
+        ]
+      Timeout: 300
+      Role: !GetAtt RPPEventsRole.Arn
+      Environment:
+        Variables:
+          EVENT_BUS_ARN: !Ref RPPEventsBus
+          EVENT_FIREHOSE: "NOT-IMPLEMENTED"
+          EVENTER_SUBSCRIBER_URL: !GetAtt RPPEventsCIPSubscriber.SubscriberUrl
+          EVENTER_SUBSCRIBER_ID: !GetAtt RPPEventsCIPSubscriber.SubscriberId
+          EVENTER_SUBSCRIPTION_URL: "/wholesale-account/events/kiosk/subscriptions"
+          LOG_LEVEL: !FindInMap [Account, !Ref "AWS::AccountId", logLevel]
+
+  RPPEventsEventerDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName:
+        !If [
+          alias,
+          !Sub "${AliasName}-rpp-events-eventer-dl-queue",
+          "rpp-events-eventer-dl-queue",
+        ]
+
+  RPPEventsEventerQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName:
+        !If [
+          alias,
+          !Sub "${AliasName}-rpp-events-eventer-queue",
+          "rpp-events-eventer-queue",
+        ]
+      VisibilityTimeout: 30
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt RPPEventsEventerDLQ.Arn
+        maxReceiveCount: 3
+
+  RPPEventsEventerQueueProcessor:
+    Type: AWS::Serverless::Function
+    DependsOn:
+      - RPPEventsEventerQueue
+    Properties:
+      CodeUri: ./build
+      AutoPublishAlias: !Ref AliasName
+      Handler: queue_processor.eventer_handler
+      FunctionName: !If [
+          alias,
+          !Sub "${AliasName}-rpp-events-eventer-queue-processor",
+          "rpp-events-eventer-queue-processor",
+        ]
+      Timeout: 30
+      Role: !GetAtt RPPEventsRole.Arn
+      Environment:
+        Variables:
+          EVENT_BUS_ARN: !Ref RPPEventsBus
+          CIP_EXPANSION_URL: "/wholesale-account/events/expander/expand"
+          LOG_LEVEL: !FindInMap [Account, !Ref "AWS::AccountId", logLevel]
+      Events:
+        RPPEventerEventsSQSTrigger:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt RPPEventsEventerQueue.Arn
+            BatchSize: 10
+  
+  RPPEventsInspectionRepairDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName:
+        !If [
+          alias,
+          !Sub "${AliasName}-rpp-events-inspection-repair-dl-queue",
+          "rpp-events-inspection-repair-dl-queue",
+        ]
+
+  RPPEventsInspectionRepairQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName:
+        !If [
+          alias,
+          !Sub "${AliasName}-rpp-events-inspection-repair-queue",
+          "rpp-events-inspection-repair-queue",
+        ]
+      VisibilityTimeout: 30
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt RPPEventsInspectionRepairDLQ.Arn
+        maxReceiveCount: 3
+
+  RPPEventsInspectionRepairQueueProcessor:
+    Type: AWS::Serverless::Function
+    DependsOn:
+      - RPPEventsInspectionRepairQueue
+    Properties:
+      CodeUri: ./build
+      AutoPublishAlias: !Ref AliasName
+      Handler: queue_processor.inspection_repair_handler
+      FunctionName: !If [
+          alias,
+          !Sub "${AliasName}-rpp-events-inspection-repair-queue-processor",
+          "rpp-events-inspection-repair-queue-processor",
+        ]
+      Timeout: 30
+      Role: !GetAtt RPPEventsRole.Arn
+      Environment:
+        Variables:
+          EVENT_BUS_ARN: !Ref RPPEventsBus
+          CIP_EXPANSION_URL: "/wholesale-account/events/expander/expand"
+          LOG_LEVEL: !FindInMap [Account, !Ref "AWS::AccountId", logLevel]
+      Events:
+        rppInspectionRepairEventsSQSTrigger:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt RPPEventsInspectionRepairQueue.Arn
+            BatchSize: 10
+
+  RPPEventsPEDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName:
+        !If [
+          alias,
+          !Sub "${AliasName}-rpp-events-pe-dl-queue",
+          "rpp-events-pe-dl-queue",
+        ]
+
+  RPPEventsPEQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName:
+        !If [
+          alias,
+          !Sub "${AliasName}-rpp-events-pe-queue",
+          "rpp-events-pe-queue",
+        ]
+      VisibilityTimeout: 30
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt RPPEventsPEDLQ.Arn
+        maxReceiveCount: 3
+
+  RPPEventsPEQueueProcessor:
+    Type: AWS::Serverless::Function
+    DependsOn:
+      - RPPEventsRPPQueue
+    Properties:
+      CodeUri: ./build
+      AutoPublishAlias: !Ref AliasName
+      Handler: queue_processor.pe_handler
+      FunctionName: !If [
+          alias,
+          !Sub "${AliasName}-rpp-events-pe-queue-processor",
+          "rpp-events-pe-queue-processor",
+        ]
+      Timeout: 30
+      Role: !GetAtt RPPEventsRole.Arn
+      Environment:
+        Variables:
+          EVENT_BUS_ARN: !Ref RPPEventsBus
+          CIP_EXPANSION_URL: "/wholesale-account/events/expander/expand"
+          LOG_LEVEL: !FindInMap [Account, !Ref "AWS::AccountId", logLevel]
+      Events:
+        RPPEventsSQSTrigger:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt RPPEventsPEQueue.Arn
+            BatchSize: 10
+
+  RPPEventsRPPDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName:
+        !If [
+          alias,
+          !Sub "${AliasName}-rpp-events-rpp-dl-queue",
+          "rpp-events-rpp-dl-queue",
+        ]
+
+  RPPEventsRPPQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName:
+        !If [
+          alias,
+          !Sub "${AliasName}-rpp-events-rpp-queue",
+          "rpp-events-rpp-queue",
+        ]
+      VisibilityTimeout: 30
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt RPPEventsPEDLQ.Arn
+        maxReceiveCount: 3
+
+  RPPEventsRPPQueueProcessor:
+    Type: AWS::Serverless::Function
+    DependsOn:
+      - RPPEventsPEQueue
+    Properties:
+      CodeUri: ./build
+      AutoPublishAlias: !Ref AliasName
+      Handler: queue_processor.rpp_handler
+      FunctionName: !If [
+          alias,
+          !Sub "${AliasName}-rpp-events-rpp-queue-processor",
+          "rpp-events-rpp-queue-processor",
+        ]
+      Timeout: 30
+      Role: !GetAtt RPPEventsRole.Arn
+      Environment:
+        Variables:
+          EVENT_BUS_ARN: !Ref RPPEventsBus
+          CIP_EXPANSION_URL: "/wholesale-account/events/expander/expand"
+          LOG_LEVEL: !FindInMap [Account, !Ref "AWS::AccountId", logLevel]
+      Events:
+        RPPEventsSQSTrigger:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt RPPEventsRPPQueue.Arn
+            BatchSize: 10
+
+  RPPEventsCFNParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: "String"
+      Name: !Sub "/rpp-events/${AliasName}/cfn/subscription/ServiceToken"
+      Value: !GetAtt RPPEventsCFN.Arn
+      Description: "SSM Parameter for rpp-events custom resource service token."
+
+  RPPEventsCIPCFNParameter:
+    Type: AWS::SSM::Parameter
+    Condition: DeployCIPResources
+    Properties:
+      Type: "String"
+      Name: !Sub "/rpp-events/${AliasName}/cip-cfn/subscription/ServiceToken"
+      Value: !GetAtt RPPEventsCIPCFN.Arn
+      Description: "SSM Parameter for rpp-events cip custom resource service token."
+
+  RPPEventsInspectionQueueParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: "String"
+      Name: !Sub "/rpp-events/${AliasName}/queue/inspection/Arn"
+      Value: !GetAtt RPPEventsInspectionRepairQueue.Arn
+      Description: "SSM Parameter for rpp-events inspection repair queue events."
+
+  RPPEventsChargesDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName:
+        !If [
+          alias,
+          !Sub "${AliasName}-rpp-events-charges-dl-queue",
+          "rpp-events-charges-dl-queue",
+        ]
+
+  RPPEventsChargesQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName:
+        !If [
+          alias,
+          !Sub "${AliasName}-rpp-events-charges-queue",
+          "rpp-events-charges-queue",
+        ]
+      VisibilityTimeout: 300
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt RPPEventsChargesDLQ.Arn
+        maxReceiveCount: 3
+
+  RPPEventsChargesQueueProcessor:
+    Type: AWS::Serverless::Function
+    DependsOn:
+      - RPPEventsChargesQueue
+    Properties:
+      Runtime: python3.9
+      CodeUri: ./build
+      AutoPublishAlias: !Ref AliasName
+      Handler: queue_processor.charges_handler
+      FunctionName:
+        !If [
+          alias,
+          !Sub "${AliasName}-rpp-events-charges-processor",
+          "rpp-events-charges-processor",
+        ]
+      Timeout: 300
+      Role: !GetAtt RPPEventsRole.Arn
+      Environment:
+        Variables:
+          AWS_LAMBDA_EXEC_WRAPPER: /opt/codeguru_profiler_lambda_exec
+          AWS_CODEGURU_PROFILER_GROUP_ARN: !GetAtt ProfilingGroup.Arn
+          AWS_CODEGURU_PROFILER_GROUP_NAME: !Ref ProfilingGroup
+          EVENT_BUS_ARN: !Ref RPPEventsBus
+          CIP_EXPANSION_URL: "/wholesale-account/events/expander/expand"
+          LOG_LEVEL: !FindInMap [Account, !Ref "AWS::AccountId", logLevel]
+      Events:
+        RPPEventsSQSTrigger:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt RPPEventsChargesQueue.Arn
+            BatchSize: 10
+
+  RPPEventsChargesQueueParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: "String"
+      Name: !Sub "/rpp-events/${AliasName}/queue/charges/Arn"
+      Value: !GetAtt RPPEventsChargesQueue.Arn
+      Description: "SSM Parameter for rpp-events Charges queue events."
+
+  RPPEventsRPPQueueParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: "String"
+      Name: !Sub "/rpp-events/${AliasName}/queue/rpp/Name"
+      Value: !GetAtt RPPEventsRPPQueue.QueueName
+      Description: "SSM Parameter for rpp-events RPP queue name."
+
+  RPPEventsRPPQueueArnParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: "String"
+      Name: !Sub "/rpp-events/${AliasName}/queue/rpp/Arn"
+      Value: !GetAtt RPPEventsRPPQueue.Arn
+      Description: "SSM Parameter for rpp-events RPP queue arn."
+
+  EventProducer:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        !If [
+          alias,
+          !Sub "${AliasName}-rpp-events-event-producer",
+          "rpp-events-event-producer",
+        ]
+      CodeUri: ./build
+      Handler: event_producer.handler
+      Role: !GetAtt RPPEventsRole.Arn
+      MemorySize: 1024
+      Timeout: 300
+      Environment:
+        Variables:
+          INVENTORY_TABLE: "rpp-inventory"
+          EVENT_DLQ_URL: !Ref EventProducerDLQ
+          FIND_CONSIGNMENT: !Ref FindConsignment
+          AWS_CODEGURU_PROFILER_GROUP_NAME: !Ref ProfilingGroup
+          EVENT_BUS: "{{resolve:ssm:/rpp-events/event-bridge}}"
+
+  EventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name:
+        !If [
+          alias,
+          !Sub "${AliasName}-rpp-events-event-bridge-retailrecon-rule",
+          "rpp-events-event-bridge-retailrecon-rule",
+        ]
+      Description: "EventBridge Rule to process RETAILRECON.ORDERS.* events and post them to eventer."
+      EventBusName: "{{resolve:ssm:/rpp-events/event-bridge}}"
+      State: !If [IsRelease, DISABLED, ENABLED]
+      EventPattern:
+        source:
+          - rpp-inventory
+        detail-type:
+          - prefix: RETAILRECON.ORDERS.
+      Targets:
+        - Arn: !GetAtt EventProducer.Arn
+          Id:
+            !If [
+              alias,
+              !Sub "${AliasName}-rpp-events-event-bridge-retailrecon-rule",
+              "rpp-events-event-bridge-retailrecon-rule",
+            ]
+          RetryPolicy:
+            MaximumRetryAttempts: 3
+            MaximumEventAgeInSeconds: 300
+          DeadLetterConfig:
+            Arn: !GetAtt EventProducerDLQ.Arn
+
+  ReconInventoryEventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name:
+        !If [
+          alias,
+          !Sub "${AliasName}-rpp-events-event-bridge-reconinventory-rule",
+          "rpp-events-event-bridge-reconinventory-rule",
+        ]
+      Description: "EventBridge Rule to process RECONINVENTORY.DATA events and post them to EventBridge bus."
+      EventBusName: "{{resolve:ssm:/rpp-events/event-bridge}}"
+      EventPattern:
+        source:
+          - rpp-inventory
+        detail-type:
+          - RECONINVENTORY.DATA
+      Targets:
+        - Arn: !GetAtt EventProducer.Arn
+          Id:
+            !If [
+              alias,
+              !Sub "${AliasName}-rpp-events-event-bridge-reconinventory-rule",
+              "rpp-events-event-bridge-reconinventory-rule",
+            ]
+          RetryPolicy:
+            MaximumRetryAttempts: 3
+            MaximumEventAgeInSeconds: 300
+          DeadLetterConfig:
+            Arn: !GetAtt EventProducerDLQ.Arn
+
+  PermissionForEventsToInvokeLambda:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt EventProducer.Arn
+      Action: lambda:InvokeFunction
+      Principal: "events.amazonaws.com"
+      SourceArn: !GetAtt EventRule.Arn
+
+  PermissionForInventoryEventsToInvokeLambda:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt EventProducer.Arn
+      Action: lambda:InvokeFunction
+      Principal: "events.amazonaws.com"
+      SourceArn: !GetAtt ReconInventoryEventRule.Arn
+
+  EventBridgeToToSqsPolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - Ref: EventProducerDLQ
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: events.amazonaws.com
+            Action:
+              - sqs:SendMessage
+            Resource: !GetAtt EventProducerDLQ.Arn
+
+  EventProducerDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName:
+        !If [
+          alias,
+          !Sub "${AliasName}-rpp-events-event-producer-dl-queue",
+          "rpp-events-event-producer-dl-queue",
+        ]
+
+  EventProducerDLQAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !If [
+          alias,
+          !Sub "${AliasName}-rpp-events-event-producer-dl-queue-alarm",
+          "rpp-events-event-producer-dl-queue-alarm",
+        ]
+      AlarmDescription: Send an alert if there are more than 10 messages in dead queue
+      Namespace: AWS/SQS
+      MetricName: ApproximateNumberOfMessagesVisible
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt EventProducerDLQ.QueueName
+      Statistic: Sum
+      Period: 300
+      Unit: Count
+      EvaluationPeriods: 2
+      Threshold: 10
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: ignore
+      AlarmActions:
+        - "{{resolve:ssm:/rpp-monitoring/alerts/topic/error}}"
+      OKActions:
+        - "{{resolve:ssm:/rpp-monitoring/alerts/topic/error}}"
+      InsufficientDataActions:
+        - "{{resolve:ssm:/rpp-monitoring/alerts/topic/error}}"
+
+  RPPEventsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !If [ alias, !Sub "${AliasName}-rpp-events", "rpp-events" ]
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: event_type
+          AttributeType: S
+      KeySchema:
+        - AttributeName: event_type
+          KeyType: HASH
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: !FindInMap [ Account, !Ref "AWS::AccountId", pointInTimeRecoveryEnabled ]

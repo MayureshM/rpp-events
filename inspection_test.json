@@ -1,0 +1,75 @@
+{
+    "eventType": "RETAIL.RECON.UPDATED",
+    "body": {
+      "serviceType": "KBBCPO",
+      "unit": {
+        "vin": "2MEFM75W13X643496",
+        "href": "https://integration1.api.manheim.com/units/id/13a6e3c6-d2fc-11e8-a577-63b2c48dd137"
+      },
+      "completedTasks": [
+        {
+          "completedOn": "2018-10-19T02:35:12Z",
+          "taskName": "Approve",
+          "createdOn": "2018-10-19T02:35:04Z"
+        },
+        {
+          "completedOn": "2018-10-19T02:36:17Z",
+          "taskName": "Audit",
+          "createdOn": "2018-10-19T02:36:13Z"
+        },
+        {
+          "completedOn": null,
+          "taskName": "Delivery",
+          "createdOn": "2018-10-19T02:36:17Z"
+        },
+        {
+          "completedOn": "2018-10-19T02:35:04Z",
+          "taskName": "Estimate",
+          "createdOn": "2018-10-19T02:34:58Z"
+        },
+        {
+          "completedOn": "2018-10-19T02:34:58Z",
+          "taskName": "Mechanical Inspection",
+          "createdOn": "2018-10-19T02:33:23Z"
+        },
+        {
+          "completedOn": "2018-10-19T02:36:13Z",
+          "taskName": "Quality Control",
+          "createdOn": "2018-10-19T02:35:46Z"
+        },
+        {
+          "completedOn": "2018-10-19T02:35:46Z",
+          "taskName": "Repair",
+          "createdOn": "2018-10-19T02:35:12Z"
+        },
+        {
+          "completedOn": "2018-10-19T02:33:23Z",
+          "taskName": "Vehicle Qualification",
+          "createdOn": "2018-10-19T02:33:08Z"
+        }
+      ],
+      "serviceBizStatus": "Unknown",
+      "consignment": {
+        "operatingLocation": {
+          "href": "https://integration1.api.manheim.com/locations/id/GCAA"
+        },
+        "href": "https://integration1.api.manheim.com/consignments/id/13cfa8f6-d2fc-11e8-b88b-2d4c62da93b2",
+        "referenceId": {
+          "workOrderNumber": "4961253"
+        }
+      },
+      "activeTasks": [
+        {
+          "type": "Delivery",
+          "createdOn": "2018-10-19T02:36:17Z"
+        }
+      ],
+      "href": "https://integration1.api.manheim.com/orders/retailRecon/id/4e1f807a-19d5-44e4-bf0a-b9344ba3ee7e",
+      "updatedOn": "2018-10-19T02:36:17Z",
+      "createdOn": "2018-10-19T02:33:08Z"
+    },
+    "createdOn": "2018-10-19T02:36:17.288Z",
+    "resource": "https://integration1.api.manheim.com/orders/retailRecon/id/4e1f807a-19d5-44e4-bf0a-b9344ba3ee7e",
+    "retailReconId": "4e1f807a-19d5-44e4-bf0a-b9344ba3ee7e"
+  }
+}

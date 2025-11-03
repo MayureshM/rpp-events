@@ -1,0 +1,5 @@
+select_Audit = "xpath://a[contains(text(),'Audit')]"
+button_CompleteAuditStage = "xpath://span[contains(text(),'Complete')]"
+total_Amount = "xpath:(//*[normalize-space(text()) and normalize-space(.)='Total'])[1]/following::div[2]"
+parts_Amount = "xpath:(//*[normalize-space(text()) and normalize-space(.)='Parts'])[2]/following::div[2]"
+warning_button = "xpath://*[text()='Acknowledge and continue anyway']"

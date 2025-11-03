@@ -1,0 +1,156 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Functions and resources to test rpp-events cfn custom resource"
+Parameters:
+  CFNServiceToken:
+    Default: /ReconMVS/rpp-events/development/cfn/subscription/ServiceToken
+    Description:
+      the service token of the custom resource to be used in creating an
+      rpp-events subscription
+    Type: AWS::SSM::Parameter::Value<String>
+  EnvironmentName:
+    Default: reconmvslocal
+    Description: The name of the environment to which rpp-events should be deployed
+    Type: String
+
+Resources:
+  RPPEventSubscriptionWithExpansion:
+    Properties:
+      ServiceToken:
+        Ref: CFNServiceToken
+      Source:
+        Eventer:
+          Events:
+            - CONSIGNMENTS.CREATED
+            - CONSIGNMENTS.UPDATED
+          Expansions:
+            CONSIGNMENTS.CREATED:
+              - root
+            CONSIGNMENTS.UPDATED:
+              - root
+              - unit
+      Targets:
+        SQS:
+          Fn::GetAtt:
+            - RPPEventsTestQueue
+            - Arn
+      Updated: 11-12-2018
+    Type: Custom::RPPEventsSubscription
+
+  RPPEventSubscriptionWithoutExpansion:
+    Properties:
+      ServiceToken:
+        Ref: CFNServiceToken
+      Source:
+        Eventer:
+          Events:
+            - OFFERINGS.CREATED
+            - OFFERINGS.UPDATED
+      Targets:
+        SQS:
+          Fn::GetAtt:
+            - RPPEventsTestQueue
+            - Arn
+    Type: Custom::RPPEventsSubscription
+
+  RPPEventsCFNTestPolicy:
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action:
+              - logs:CreateLogGroup
+            Effect: Allow
+            Resource:
+              - Fn::Sub: arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*
+          - Action:
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+            Effect: Allow
+            Resource:
+              - Fn::Sub: arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*
+          - Action:
+              - sqs:*
+            Effect: Allow
+            Resource: "*"
+        Version: "2012-10-17"
+      PolicyName:
+        Fn::Sub: ${EnvironmentName}-rpp-events-cfn-policy
+      Roles:
+        - Ref: RPPEventsCFNTestRole
+    Type: AWS::IAM::Policy
+
+  RPPEventsCFNTestRole:
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action:
+              - sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+        Version: "2012-10-17"
+      RoleName:
+        Fn::Sub: ${EnvironmentName}-rpp-events-cfn-test-role
+    Type: AWS::IAM::Role
+
+  RPPEventsTestCFN:
+    DependsOn:
+      - RPPEventsCFNTestPolicy
+    Properties:
+      CodeUri: s3://coxauto-reconmvs-nonprod-lambda-functions/a72a7e3a2554f780f0ac9c76ebeb1198
+      Events:
+        RPPEvents:
+          Properties:
+            BatchSize: 10
+            Queue:
+              Fn::GetAtt:
+                - RPPEventsTestQueue
+                - Arn
+          Type: SQS
+      FunctionName:
+        Fn::Sub: ${EnvironmentName}-rpp-events-cfn-test
+      Handler: rpp_events.cfn.cfn_echo_test.handler
+      Role:
+        Fn::GetAtt:
+          - RPPEventsCFNTestRole
+          - Arn
+      Runtime: python3.9
+      Timeout: 30
+    Type: AWS::Serverless::Function
+
+  RPPEventsTestQueue:
+    Properties:
+      QueueName:
+        Fn::Sub: ${EnvironmentName}-rpp-events-cfn-test-sqs
+    Type: AWS::SQS::Queue
+
+  RPPEventsTestQueuePolicy:
+    Properties:
+      PolicyDocument:
+        Id: RPPEventsTestQueuePolicy
+        Statement:
+          - Action:
+              - sqs:SendMessage
+              - sqs:ReceiveMessage
+            Condition:
+              ArnEquals:
+                aws:SourceArn:
+                  - Fn::GetAtt:
+                      - RPPEventSubscriptionWithExpansion
+                      - TopicArn
+                  - Fn::GetAtt:
+                      - RPPEventSubscriptionWithoutExpansion
+                      - TopicArn
+            Effect: Allow
+            Principal:
+              AWS: "*"
+            Resource:
+              - Fn::GetAtt:
+                  - RPPEventsTestQueue
+                  - Arn
+        Version: "2012-10-17"
+      Queues:
+        - Ref: RPPEventsTestQueue
+    Type: AWS::SQS::QueuePolicy
+
+Transform: AWS::Serverless-2016-10-31

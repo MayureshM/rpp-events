@@ -1,0 +1,17 @@
+boto3
+robotframework
+simplejson
+voluptuous
+PyYAML
+robotframework-datadriver
+robotframework-debuglibrary
+robotframework-excellib
+robotframework-pabot
+robotframework-pythonlibcore
+robotframework-seleniumlibrary
+robotframework-stacktrace
+robotframework
+selenium-library
+selenium
+urllib3
+webdriver-manager

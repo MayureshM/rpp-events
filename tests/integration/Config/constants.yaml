@@ -1,0 +1,20 @@
+BROWSER:
+  CHROME: chrome
+  FIREFOX: firefox
+DATA:
+  EXCEL_US734800RP: ../rpp-events/tests/integration/RegressionTest/TestData/US734800RP.xlsx
+  EXCEL_tdm_data: ../rpp-events/tests/integration/RegressionTest/TestData/tdm_data.xlsx
+  EXCEL_WORKORDER:   ../TestData/work_order_data.xlsx
+DEV:
+  URL:  https://development.reconmvs.com
+  AUCTION:  QLM1
+  SITE: https://development.reconmvs.com/recon/#/worklog/QLM1
+UAT:
+  URL:  https://uat.reconmvs.com
+  AUCTION:  PLM1
+  SITE: https://uat.reconmvs.com/recon/#/worklog/PLM1
+ACCOUNT:
+  USER: recon_admin@xtime.com
+  PASS: Xtime123
+
+

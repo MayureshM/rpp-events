@@ -1,0 +1,273 @@
+{
+  "CreateSubscription": {
+    "event": {
+      "RequestType": "Create",
+      "ServiceToken": "some_arn",
+      "ResponseURL": "https://cloudformation-custom-resource-response-euwest1.s3-eu-west-1.amazonaws.com/arn%3Aaws%3Acloudformation%3Aeu-west-1%3A143044406720%3Astack/test-route53-stack/22b48750-f4b2-11e4-b550-5067141f4d5d%7CRoute53%7Cafd8d7c5-9376-4013-8b3b-307517b8719e?AWSAccessKeyId=AKIAJ7MCS7PVEUOADEEA&Expires=1431008011&Signature=PzIB%2FPeLtpWutgn7QAgUnEKr%2Fgg%3D",
+      "StackId": "arn:aws:cloudformation:eu-west-1:143044406720:stack/test-cfn-stack/22b48750-f4b2-11e4-b550-5067141f4d5d",
+      "RequestId": "afd8d7c5-9376-4013-8b3b-307517b8719e",
+      "LogicalResourceId": "RPPEventsSubscription",
+      "ResourceType": "Custom::TestCFN",
+      "ResourceProperties": {
+        "Eventer": {
+          "Events": ["MY.TEST.EVENT", "MY.TEST.EVENT2"],
+          "Protocol": {
+            "Lambda": {
+              "Arn": "arn:aws:sns:us-east-1:423319072129:test"
+            }
+          }
+        }
+      }
+    },
+    "status": "SUCCESS"
+  },
+  "UpdateSubscription": {
+    "event": {
+      "RequestType": "Update",
+      "ServiceToken": "some_arn",
+      "ResponseURL": "https://cloudformation-custom-resource-response-euwest1.s3-eu-west-1.amazonaws.com/arn%3Aaws%3Acloudformation%3Aeu-west-1%3A143044406720%3Astack/test-route53-stack/22b48750-f4b2-11e4-b550-5067141f4d5d%7CRoute53%7Cafd8d7c5-9376-4013-8b3b-307517b8719e?AWSAccessKeyId=AKIAJ7MCS7PVEUOADEEA&Expires=1431008011&Signature=PzIB%2FPeLtpWutgn7QAgUnEKr%2Fgg%3D",
+      "StackId": "arn:aws:cloudformation:eu-west-1:143044406720:stack/test-cfn-stack/22b48750-f4b2-11e4-b550-5067141f4d5d",
+      "RequestId": "afd8d7c5-9376-4013-8b3b-307517b8719e",
+      "LogicalResourceId": "Resource",
+      "PhysicalResourceId": "eyJsYW1iZGEiOiAiYXJuOmF3czpzbnM6dXMtZWFzdC0xOjEyMzQ1Njc4OTAxMjp0ZXN0X3RvcGljOjVhYzhiY2UzLWU1MmEtNGNkMC1iOGVhLThiZTMyMmNhMDI5NiIsICJzcXMiOiAiYXJuOmF3czpzbnM6dXMtZWFzdC0xOjEyMzQ1Njc4OTAxMjp0ZXN0X3RvcGljOjVhYzhiY2UzLWU1MmEtNGNkMC1iOGVhLThiZTMyMmNhMDI5OSJ9",
+      "ResourceType": "Custom::TestCFN",
+      "ResourceProperties": {
+        "Eventer": {
+          "Events": ["MY.TEST.EVENT", "MY.TEST.EVENT2"],
+          "Protocol": {
+            "Lambda": {
+              "Arn": "arn:aws:sns:us-east-1:423319072129:test"
+            }
+          }
+        }
+      }
+    },
+    "status": "SUCCESS"
+  },
+  "DeleteSubscription": {
+    "event": {
+      "RequestType": "Delete",
+      "ServiceToken": "some_arn",
+      "ResponseURL": "https://cloudformation-custom-resource-response-euwest1.s3-eu-west-1.amazonaws.com/arn%3Aaws%3Acloudformation%3Aeu-west-1%3A143044406720%3Astack/test-route53-stack/22b48750-f4b2-11e4-b550-5067141f4d5d%7CRoute53%7Cafd8d7c5-9376-4013-8b3b-307517b8719e?AWSAccessKeyId=AKIAJ7MCS7PVEUOADEEA&Expires=1431008011&Signature=PzIB%2FPeLtpWutgn7QAgUnEKr%2Fgg%3D",
+      "StackId": "arn:aws:cloudformation:eu-west-1:143044406720:stack/test-cfn-stack/22b48750-f4b2-11e4-b550-5067141f4d5d",
+      "RequestId": "afd8d7c5-9376-4013-8b3b-307517b8719e",
+      "LogicalResourceId": "Resource",
+      "PhysicalResourceId": "eyJsYW1iZGEiOiAiYXJuOmF3czpzbnM6dXMtZWFzdC0xOjEyMzQ1Njc4OTAxMjp0ZXN0X3RvcGljOjVhYzhiY2UzLWU1MmEtNGNkMC1iOGVhLThiZTMyMmNhMDI5NiIsICJzcXMiOiAiYXJuOmF3czpzbnM6dXMtZWFzdC0xOjEyMzQ1Njc4OTAxMjp0ZXN0X3RvcGljOjVhYzhiY2UzLWU1MmEtNGNkMC1iOGVhLThiZTMyMmNhMDI5OSJ9",
+      "ResourceType": "Custom::TestCFN",
+      "ResourceProperties": {
+        "Eventer": {
+          "Events": ["MY.TEST.EVENT", "MY.TEST.EVENT2"],
+          "Protocol": {
+            "Lambda": {
+              "Arn": "arn:aws:sns:us-east-1:423319072129:test"
+            }
+          }
+        }
+      }
+    },
+    "status": "SUCCESS"
+  },
+  "CreateSubscriptionWithQueue": {
+    "event": {
+      "RequestType": "Create",
+      "ServiceToken": "some_arn",
+      "ResponseURL": "https://cloudformation-custom-resource-response-euwest1.s3-eu-west-1.amazonaws.com/arn%3Aaws%3Acloudformation%3Aeu-west-1%3A143044406720%3Astack/test-route53-stack/22b48750-f4b2-11e4-b550-5067141f4d5d%7CRoute53%7Cafd8d7c5-9376-4013-8b3b-307517b8719e?AWSAccessKeyId=AKIAJ7MCS7PVEUOADEEA&Expires=1431008011&Signature=PzIB%2FPeLtpWutgn7QAgUnEKr%2Fgg%3D",
+      "StackId": "arn:aws:cloudformation:eu-west-1:143044406720:stack/test-cfn-stack/22b48750-f4b2-11e4-b550-5067141f4d5d",
+      "RequestId": "afd8d7c5-9376-4013-8b3b-307517b8719e",
+      "LogicalResourceId": "RPPEventsSubscription",
+      "ResourceType": "Custom::TestCFN",
+      "ResourceProperties": {
+        "Eventer": {
+          "Events": ["MY.TEST.EVENT", "MY.TEST.EVENT2"],
+          "SQSArn": "arn:aws:sqs:us-east-1:423319072129:test",
+          "Protocol": {
+            "Lambda": {
+              "Arn": "arn:aws:sns:us-east-1:423319072129:test"
+            }
+          }
+        }
+      }
+    },
+    "status": "SUCCESS"
+  },
+  "DeleteSubscriptionWithQueue": {
+    "event": {
+      "RequestType": "Delete",
+      "ServiceToken": "some_arn",
+      "ResponseURL": "https://cloudformation-custom-resource-response-euwest1.s3-eu-west-1.amazonaws.com/arn%3Aaws%3Acloudformation%3Aeu-west-1%3A143044406720%3Astack/test-route53-stack/22b48750-f4b2-11e4-b550-5067141f4d5d%7CRoute53%7Cafd8d7c5-9376-4013-8b3b-307517b8719e?AWSAccessKeyId=AKIAJ7MCS7PVEUOADEEA&Expires=1431008011&Signature=PzIB%2FPeLtpWutgn7QAgUnEKr%2Fgg%3D",
+      "StackId": "arn:aws:cloudformation:eu-west-1:143044406720:stack/test-cfn-stack/22b48750-f4b2-11e4-b550-5067141f4d5d",
+      "RequestId": "afd8d7c5-9376-4013-8b3b-307517b8719e",
+      "LogicalResourceId": "Resource",
+      "PhysicalResourceId": "eyJsYW1iZGEiOiAiYXJuOmF3czpzbnM6dXMtZWFzdC0xOjEyMzQ1Njc4OTAxMjp0ZXN0X3RvcGljOjVhYzhiY2UzLWU1MmEtNGNkMC1iOGVhLThiZTMyMmNhMDI5NiIsICJzcXMiOiAiYXJuOmF3czpzbnM6dXMtZWFzdC0xOjEyMzQ1Njc4OTAxMjp0ZXN0X3RvcGljOjVhYzhiY2UzLWU1MmEtNGNkMC1iOGVhLThiZTMyMmNhMDI5OSJ9",
+      "ResourceType": "Custom::TestCFN",
+      "ResourceProperties": {
+        "Eventer": {
+          "Events": ["MY.TEST.EVENT"],
+          "SQSArn": "arn:aws:sqs:us-east-1:423319072129:test",
+          "Protocol": {
+            "Lambda": {
+              "Arn": "arn:aws:sns:us-east-1:423319072129:test"
+            }
+          }
+        }
+      }
+    },
+    "status": "SUCCESS"
+  },
+  "UpdateSubscriptionWithQueue": {
+    "event": {
+      "RequestType": "Update",
+      "ServiceToken": "some_arn",
+      "ResponseURL": "https://cloudformation-custom-resource-response-euwest1.s3-eu-west-1.amazonaws.com/arn%3Aaws%3Acloudformation%3Aeu-west-1%3A143044406720%3Astack/test-route53-stack/22b48750-f4b2-11e4-b550-5067141f4d5d%7CRoute53%7Cafd8d7c5-9376-4013-8b3b-307517b8719e?AWSAccessKeyId=AKIAJ7MCS7PVEUOADEEA&Expires=1431008011&Signature=PzIB%2FPeLtpWutgn7QAgUnEKr%2Fgg%3D",
+      "StackId": "arn:aws:cloudformation:eu-west-1:143044406720:stack/test-cfn-stack/22b48750-f4b2-11e4-b550-5067141f4d5d",
+      "RequestId": "afd8d7c5-9376-4013-8b3b-307517b8719e",
+      "LogicalResourceId": "Resource",
+      "PhysicalResourceId": "eyJsYW1iZGEiOiAiYXJuOmF3czpzbnM6dXMtZWFzdC0xOjEyMzQ1Njc4OTAxMjp0ZXN0X3RvcGljOjVhYzhiY2UzLWU1MmEtNGNkMC1iOGVhLThiZTMyMmNhMDI5NiIsICJzcXMiOiAiYXJuOmF3czpzbnM6dXMtZWFzdC0xOjEyMzQ1Njc4OTAxMjp0ZXN0X3RvcGljOjVhYzhiY2UzLWU1MmEtNGNkMC1iOGVhLThiZTMyMmNhMDI5OSJ9",
+      "ResourceType": "Custom::TestCFN",
+      "ResourceProperties": {
+        "Eventer": {
+          "Events": ["MY.TEST.EVENT", "MY.TEST.EVENT2"],
+          "SQSArn": "arn:aws:sqs:us-east-1:423319072129:test",
+          "Protocol": {
+            "Lambda": {
+              "Arn": "arn:aws:sns:us-east-1:423319072129:test"
+            }
+          }
+        }
+      }
+    },
+    "status": "SUCCESS"
+  },
+  "CreateSubscriptionMissingLambda": {
+    "event": {
+      "RequestType": "Create",
+      "ServiceToken": "some_arn",
+      "ResponseURL": "https://cloudformation-custom-resource-response-euwest1.s3-eu-west-1.amazonaws.com/arn%3Aaws%3Acloudformation%3Aeu-west-1%3A143044406720%3Astack/test-route53-stack/22b48750-f4b2-11e4-b550-5067141f4d5d%7CRoute53%7Cafd8d7c5-9376-4013-8b3b-307517b8719e?AWSAccessKeyId=AKIAJ7MCS7PVEUOADEEA&Expires=1431008011&Signature=PzIB%2FPeLtpWutgn7QAgUnEKr%2Fgg%3D",
+      "StackId": "arn:aws:cloudformation:eu-west-1:143044406720:stack/test-cfn-stack/22b48750-f4b2-11e4-b550-5067141f4d5d",
+      "RequestId": "afd8d7c5-9376-4013-8b3b-307517b8719e",
+      "LogicalResourceId": "RPPEventsSubscription",
+      "ResourceType": "Custom::TestCFN",
+      "ResourceProperties": {
+        "Eventer": {
+          "Events": "MY.TEST.EVENT"
+        }
+      }
+    },
+    "status": "FAILED"
+  },
+  "UpdateSubscriptionBadProperty": {
+    "event": {
+      "RequestType": "Update",
+      "ServiceToken": "some_arn",
+      "ResponseURL": "https://cloudformation-custom-resource-response-euwest1.s3-eu-west-1.amazonaws.com/arn%3Aaws%3Acloudformation%3Aeu-west-1%3A143044406720%3Astack/test-route53-stack/22b48750-f4b2-11e4-b550-5067141f4d5d%7CRoute53%7Cafd8d7c5-9376-4013-8b3b-307517b8719e?AWSAccessKeyId=AKIAJ7MCS7PVEUOADEEA&Expires=1431008011&Signature=PzIB%2FPeLtpWutgn7QAgUnEKr%2Fgg%3D",
+      "StackId": "arn:aws:cloudformation:eu-west-1:143044406720:stack/test-cfn-stack/22b48750-f4b2-11e4-b550-5067141f4d5d",
+      "RequestId": "afd8d7c5-9376-4013-8b3b-307517b8719e",
+      "LogicalResourceId": "Resource",
+      "PhysicalResourceId": "eyJsYW1iZGEiOiAiYXJuOmF3czpzbnM6dXMtZWFzdC0xOjEyMzQ1Njc4OTAxMjp0ZXN0X3RvcGljOjVhYzhiY2UzLWU1MmEtNGNkMC1iOGVhLThiZTMyMmNhMDI5NiIsICJzcXMiOiAiYXJuOmF3czpzbnM6dXMtZWFzdC0xOjEyMzQ1Njc4OTAxMjp0ZXN0X3RvcGljOjVhYzhiY2UzLWU1MmEtNGNkMC1iOGVhLThiZTMyMmNhMDI5OSJ9",
+      "ResourceType": "Custom::TestCFN",
+      "ResourceProperties": {
+        "Eventer": {
+          "Events": ["MY.TEST.EVENT", "MY.TEST.EVENT2"],
+          "Protocol": {
+            "SNS": {
+              "Arn": "arn:aws:sns:us-east-1:423319072129:test"
+            }
+          }
+        }
+      }
+    },
+    "status": "FAILED"
+  },
+  "DeleteSubscriptionNoPhysicalResourceId": {
+    "event": {
+      "RequestType": "Delete",
+      "ServiceToken": "some_arn",
+      "ResponseURL": "https://cloudformation-custom-resource-response-euwest1.s3-eu-west-1.amazonaws.com/arn%3Aaws%3Acloudformation%3Aeu-west-1%3A143044406720%3Astack/test-route53-stack/22b48750-f4b2-11e4-b550-5067141f4d5d%7CRoute53%7Cafd8d7c5-9376-4013-8b3b-307517b8719e?AWSAccessKeyId=AKIAJ7MCS7PVEUOADEEA&Expires=1431008011&Signature=PzIB%2FPeLtpWutgn7QAgUnEKr%2Fgg%3D",
+      "StackId": "arn:aws:cloudformation:eu-west-1:143044406720:stack/test-cfn-stack/22b48750-f4b2-11e4-b550-5067141f4d5d",
+      "RequestId": "afd8d7c5-9376-4013-8b3b-307517b8719e",
+      "LogicalResourceId": "Resource",
+      "ResourceType": "Custom::TestCFN",
+      "ResourceProperties": {
+        "Eventer": {
+          "Events": ["MY.TEST.EVENT", "MY.TEST.EVENT2"],
+          "Protocol": {
+            "Lambda": {
+              "Arn": "arn:aws:sns:us-east-1:423319072129:test"
+            }
+          }
+        }
+      }
+    },
+    "status": "FAILURe"
+  },
+  "CreateSubscriptionWithQueueBadUrl": {
+    "event": {
+      "RequestType": "Create",
+      "ServiceToken": "some_arn",
+      "ResponseURL": "https://cloudformation-custom-resource-response-euwest1.s3-eu-west-1.amazonaws.com/arn%3Aaws%3Acloudformation%3Aeu-west-1%3A143044406720%3Astack/test-route53-stack/22b48750-f4b2-11e4-b550-5067141f4d5d%7CRoute53%7Cafd8d7c5-9376-4013-8b3b-307517b8719e?AWSAccessKeyId=AKIAJ7MCS7PVEUOADEEA&Expires=1431008011&Signature=PzIB%2FPeLtpWutgn7QAgUnEKr%2Fgg%3D",
+      "StackId": "arn:aws:cloudformation:eu-west-1:143044406720:stack/test-cfn-stack/22b48750-f4b2-11e4-b550-5067141f4d5d",
+      "RequestId": "afd8d7c5-9376-4013-8b3b-307517b8719e",
+      "LogicalResourceId": "RPPEventsSubscription",
+      "ResourceType": "Custom::TestCFN",
+      "ResourceProperties": {
+        "Eventer": {
+          "Events": ["MY.TEST.EVENT", "MY.TEST.EVENT2"],
+          "SQSArn": "arn:aws:sqs:us-east-1:423319072129:test",
+          "Protocol": {
+            "Lambda": {
+              "Arn": "arn:aws:sns:us-east-1:423319072129:test"
+            }
+          }
+        }
+      }
+    },
+    "status": "FAILED"
+  },
+  "DeleteSubscriptionWithBadArn": {
+    "event": {
+      "RequestType": "Delete",
+      "ServiceToken": "some_arn",
+      "ResponseURL": "https://cloudformation-custom-resource-response-euwest1.s3-eu-west-1.amazonaws.com/arn%3Aaws%3Acloudformation%3Aeu-west-1%3A143044406720%3Astack/test-route53-stack/22b48750-f4b2-11e4-b550-5067141f4d5d%7CRoute53%7Cafd8d7c5-9376-4013-8b3b-307517b8719e?AWSAccessKeyId=AKIAJ7MCS7PVEUOADEEA&Expires=1431008011&Signature=PzIB%2FPeLtpWutgn7QAgUnEKr%2Fgg%3D",
+      "StackId": "arn:aws:cloudformation:eu-west-1:143044406720:stack/test-cfn-stack/22b48750-f4b2-11e4-b550-5067141f4d5d",
+      "RequestId": "afd8d7c5-9376-4013-8b3b-307517b8719e",
+      "LogicalResourceId": "Resource",
+      "PhysicalResourceId": "eyJsYW1iZGEiOiAiYXJuOmF3czpzbnM6dXMtZWFzdC0xOjEyMzQ1Njc4OTAxMjp0ZXN0X3RvcGljOjVhYzhiY2UzLWU1MmEtNGNkMC1iOGVhLThiZTMyMmNhMDI5NiIsICJzcXMiOiAiYXJuOmF3czpzbnM6dXMtZWFzdC0xOjEyMzQ1Njc4OTAxMjp0ZXN0X3RvcGljOjVhYzhiY2UzLWU1MmEtNGNkMC1iOGVhLThiZTMyMmNhMDI5OSJ9",
+      "ResourceType": "Custom::TestCFN",
+      "ResourceProperties": {
+        "Eventer": {
+          "Events": ["MY.TEST.EVENT", "MY.TEST.EVENT2"],
+          "SQSArn": "arn:aws:sqs:us-east-1:423319072129:test",
+          "Protocol": {
+            "Lambda": {
+              "Arn": "arn:aws:sns:423319072129:test"
+            }
+          }
+        }
+      }
+    },
+    "status": "FAILED"
+  },
+  "CreateSubscriptionNoeventer": {
+    "event": {
+      "RequestType": "Create",
+      "ServiceToken": "some_arn",
+      "ResponseURL": "https://cloudformation-custom-resource-response-euwest1.s3-eu-west-1.amazonaws.com/arn%3Aaws%3Acloudformation%3Aeu-west-1%3A143044406720%3Astack/test-route53-stack/22b48750-f4b2-11e4-b550-5067141f4d5d%7CRoute53%7Cafd8d7c5-9376-4013-8b3b-307517b8719e?AWSAccessKeyId=AKIAJ7MCS7PVEUOADEEA&Expires=1431008011&Signature=PzIB%2FPeLtpWutgn7QAgUnEKr%2Fgg%3D",
+      "StackId": "arn:aws:cloudformation:eu-west-1:143044406720:stack/test-cfn-stack/22b48750-f4b2-11e4-b550-5067141f4d5d",
+      "RequestId": "afd8d7c5-9376-4013-8b3b-307517b8719e",
+      "LogicalResourceId": "Resource",
+      "PhysicalResourceId": "eyJsYW1iZGEiOiAiYXJuOmF3czpzbnM6dXMtZWFzdC0xOjEyMzQ1Njc4OTAxMjp0ZXN0X3RvcGljOjVhYzhiY2UzLWU1MmEtNGNkMC1iOGVhLThiZTMyMmNhMDI5NiIsICJzcXMiOiAiYXJuOmF3czpzbnM6dXMtZWFzdC0xOjEyMzQ1Njc4OTAxMjp0ZXN0X3RvcGljOjVhYzhiY2UzLWU1MmEtNGNkMC1iOGVhLThiZTMyMmNhMDI5OSJ9",
+      "ResourceType": "Custom::TestCFN",
+      "ResourceProperties": {
+        "InspectionEvent": {
+          "Events": ["MY.TEST.EVENT", "MY.TEST.EVENT2"],
+          "Protocol": {
+            "Lambda": {
+              "Arn": "arn:aws:sns:us-east-1:423319072129:test"
+            }
+          }
+        }
+      }
+    },
+    "status": "FAILED"
+  }
+}

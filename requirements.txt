@@ -1,0 +1,13 @@
+git+ssh://git@ghe.coxautoinc.com/ReconMVS/rpp-lib.git@master
+
+urllib3
+requests
+voluptuous
+regex
+environs
+codeguru_profiler_agent
+aws-lambda-powertools[all]
+boto3
+pyhumps
+orjson
+deepdiff==6.2.2

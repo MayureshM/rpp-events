@@ -1,0 +1,14 @@
+{
+    "href": "https://test.api.manheim.com/events/id/test_event_uuid",
+    "body": {
+        "test": "test",
+        "test2": "test2"
+    },
+    "createdOn": "2018-04-11T17:40:06.598Z",
+    "subscription": {
+        "href": "https://test.api.manheim.com/subscriptions/id/test_subscription_uuid"
+    },
+    "subscriber": {
+        "href": "https://test.api.manheim.com/subscribers/id/test_subscriber_uuid"
+    }
+}

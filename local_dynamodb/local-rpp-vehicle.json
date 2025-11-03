@@ -1,0 +1,15 @@
+{
+    "TableName": "local-rpp-vehicle",
+    "KeySchema": [
+      { "AttributeName": "vin", "KeyType": "HASH" },
+      { "AttributeName": "work_order_id", "KeyType": "RANGE" }
+    ],
+    "AttributeDefinitions": [
+      { "AttributeName": "vin", "AttributeType": "S" },
+      { "AttributeName": "work_order_id", "AttributeType": "S" }
+    ],
+    "ProvisionedThroughput": {
+      "ReadCapacityUnits": 1,
+      "WriteCapacityUnits": 1
+    }
+}

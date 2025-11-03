@@ -1,0 +1,127 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+
+Description: |
+  Functions and resources to test rpp-events cfn custom resource
+
+Parameters:
+  EnvironmentName:
+    Description: The name of the environment to which rpp-events should be deployed
+    Type: String
+    Default: reconmvslocal
+
+  CFNServiceToken:
+    Description: the service token of the custom resource to be used in creating an rpp-events subscription
+    Type: "AWS::SSM::Parameter::Value<String>"
+    Default: /ReconMVS/rpp-events/development/cfn/subscription/ServiceToken
+
+Resources:
+  RPPEventsCFNTestRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${EnvironmentName}-rpp-events-cfn-test-role
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+
+  RPPEventsCFNTestPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub ${EnvironmentName}-rpp-events-cfn-policy
+      Roles:
+        - !Ref RPPEventsCFNTestRole
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - logs:CreateLogGroup
+            Resource:
+              - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*"
+          - Effect: Allow
+            Action:
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+            Resource:
+              - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*"
+
+  RPPEventsTestQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${EnvironmentName}-rpp-events-cfn-test-sqs
+
+  RPPEventsTestQueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - !Ref RPPEventsTestQueue
+      PolicyDocument:
+        Version: "2012-10-17"
+        Id: "RPPEventsTestQueuePolicy"
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: "*"
+            Action:
+              - sqs:SendMessage
+              - sqs:ReceiveMessage
+            Resource:
+              - !GetAtt RPPEventsTestQueue.Arn
+            Condition:
+              ArnEquals:
+                aws:SourceArn:
+                  - !GetAtt RPPEventSubscription.TopicArn
+
+  RPPEventSubscription:
+    Type: Custom::RPPEventsSubscription
+    Properties:
+      ServiceToken: !Ref CFNServiceToken
+      Source:
+        Eventer:
+          Events:
+            - "ORDERS.CAPTURE.UPDATED"
+            - "ORDERS.CERTIFICATION.CREATED"
+        Inspection:
+          Events:
+            - "ORDERS.RETAILRECON.UPDATED"
+      Targets:
+        SQS: !GetAtt RPPEventsTestQueue.Arn
+        Lambda: !GetAtt RPPEventsTestCFN.Arn
+
+  RPPEventsTestCFN:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: python3.9
+      CodeUri: ./build
+      Handler: rpp_events.cfn.cfn_echo_test.handler
+      FunctionName: !Sub ${EnvironmentName}-rpp-events-cfn-test
+      Timeout: 300
+      Role: !GetAtt RPPEventsCFNTestRole.Arn
+      Events:
+        RPPEvents:
+          Type: SNS
+          Properties:
+            Topic: !GetAtt RPPEventSubscription.TopicArn
+
+Outputs:
+  LambdaSubscriptionArn:
+    Description: the sub arn
+    Value: !GetAtt RPPEventSubscription.LambdaSubscriptionArn
+
+  SQSSubscriptionArn:
+    Description: the sub arn
+    Value: !GetAtt RPPEventSubscription.SQSSubscriptionArn
+
+  TopicArn:
+    Description: the topic arn
+    Value: !GetAtt RPPEventSubscription.TopicArn
+
+  StreamName:
+    Description: the stream name
+    Value: !GetAtt RPPEventSubscription.StreamName
