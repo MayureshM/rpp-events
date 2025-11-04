@@ -1,24 +1,32 @@
 ```json
 [
     {
-        "path": "ai-generated-tests/test_config_manager.py",
-        "content": "import pytest\nfrom my_project import ConfigManager\n\n\ndef test_config_manager_init():\n    config_manager = ConfigManager()\n    assert config_manager is not None\n\n\ndef test_config_manager_get_config():\n    config_manager = ConfigManager()\n    config = config_manager.get_config('test_config')\n    assert config is not None\n"
+        "path": "ai-generated-tests/test_appconfig.py",
+        "content": "import pytest\n\n# Test cases for AppConfig module\n\ndef test_appconfig_validate_config():\n    pass\n\ndef test_appconfig_retrieve_config():\n    pass\n\ndef test_appconfig_transform_data():\n    pass\n"
     },
     {
-        "path": "ai-generated-tests/test_app_config.py",
-        "content": "import pytest\nfrom my_project import AppConfig\n\n\ndef test_app_config_get_config():\n    app_config = AppConfig()\n    config = app_config.get_config('test_config')\n    assert config is not None\n"
+        "path": "ai-generated-tests/test_parameterstore.py",
+        "content": "import pytest\n\n# Test cases for ParameterStore module\n\ndef test_parameterstore_get_parameter():\n    pass\n\ndef test_parameterstore_transform_data():\n    pass\n\ndef test_parameterstore_error_handling():\n    pass\n"
     },
     {
-        "path": "ai-generated-tests/test_parameter_store.py",
-        "content": "import pytest\nfrom my_project import ParameterStore\n\n\ndef test_parameter_store_get_parameter():\n    parameter_store = ParameterStore()\n    parameter = parameter_store.get_parameter('test_parameter')\n    assert parameter is not None\n"
-    },
-    {
-        "path": "ai-generated-tests/test_secret_manager.py",
-        "content": "import pytest\nfrom my_project import SecretManager\n\n\ndef test_secret_manager_get_secret():\n    secret_manager = SecretManager()\n    secret = secret_manager.get_secret('test_secret')\n    assert secret is not None\n"
+        "path": "ai-generated-tests/test_secretmanager.py",
+        "content": "import pytest\n\n# Test cases for SecretManager module\n\ndef test_secretmanager_get_secret():\n    pass\n\ndef test_secretmanager_transform_data():\n    pass\n\ndef test_secretmanager_error_handling():\n    pass\n"
     },
     {
         "path": "ai-generated-tests/test_dynamodb.py",
-        "content": "import pytest\nfrom my_project import DynamoDB\n\n\ndef test_dynamodb_get_data():\n    dynamodb = DynamoDB()\n    data = dynamodb.get_data('test_table', 'test_key')\n    assert data is not None\n"
+        "content": "import pytest\n\n# Test cases for DynamoDB module\n\ndef test_dynamodb_data_retrieval():\n    pass\n\ndef test_dynamodb_transform_data():\n    pass\n\ndef test_dynamodb_error_handling():\n    pass\n"
+    },
+    {
+        "path": "ai-generated-tests/test_configmanager.py",
+        "content": "import pytest\n\n# Test cases for ConfigManager module\n\ndef test_configmanager_retrieve_config():\n    pass\n\ndef test_configmanager_unified_interface():\n    pass\n"
+    },
+    {
+        "path": "ai-generated-tests/test_validation.py",
+        "content": "import pytest\n\n# Test cases for Validation module\n\ndef test_validation_event_payload():\n    pass\n\ndef test_validation_cloudformation_resources():\n    pass\n"
+    },
+    {
+        "path": "ai-generated-tests/test_util.py",
+        "content": "import pytest\n\n# Test cases for Util module\n\ndef test_util_logging():\n    pass\n\ndef test_util_metrics():\n    pass\n\ndef test_util_error_handling():\n    pass\n\ndef test_util_data_processing():\n    pass\n\ndef test_util_sqs_messages():\n    pass\n\ndef test_util_error_logs():\n    pass\n"
     }
 ]
 ```
